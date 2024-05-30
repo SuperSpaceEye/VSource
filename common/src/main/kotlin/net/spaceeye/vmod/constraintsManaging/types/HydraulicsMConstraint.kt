@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.spaceeye.vmod.constraintsManaging.*
+import net.spaceeye.vmod.events.AVSEvents
 import net.spaceeye.vmod.network.*
 import net.spaceeye.vmod.utils.vs.VSConstraintDeserializationUtil.deserializeConstraint
 import net.spaceeye.vmod.utils.vs.VSConstraintDeserializationUtil.tryConvertDimensionId
@@ -20,6 +21,7 @@ import org.valkyrienskies.core.api.ships.QueryableShipData
 import org.valkyrienskies.core.api.ships.Ship
 import org.valkyrienskies.core.api.ships.properties.ShipId
 import org.valkyrienskies.core.apigame.constraints.*
+import org.valkyrienskies.core.impl.game.ships.ShipData
 import org.valkyrienskies.mod.common.shipObjectWorld
 import org.valkyrienskies.physics_api.ConstraintId
 import kotlin.math.abs
@@ -422,6 +424,17 @@ class HydraulicsMConstraint(): MConstraint, MRenderable, Tickable {
         if (connectionMode == ConnectionMode.FREE_ORIENTATION) {return true}
         cIDs.add(level.shipObjectWorld.createNewConstraint(aconstraint2) ?: clean(level) ?: return false)
         cIDs.add(level.shipObjectWorld.createNewConstraint(rconstraint) ?: clean(level) ?: return false)
+
+        ShipDeletionFilter.addShipIdToFilter(aconstraint1.shipId0) {
+            AVSEvents.serverShipRemoveEvent.emit(AVSEvents.ServerShipRemoveEvent(it as ShipData))
+            it.inertiaData
+            ShipDeletionFilter.removeShipLater(it.id)
+        }
+
+        ShipDeletionFilter.addShipIdToFilter(aconstraint2.shipId1) {
+            AVSEvents.serverShipRemoveEvent.emit(AVSEvents.ServerShipRemoveEvent(it as ShipData))
+            ShipDeletionFilter.removeShipLater(it.id)
+        }
 
         return true
     }

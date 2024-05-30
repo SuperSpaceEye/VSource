@@ -1,5 +1,6 @@
 package net.spaceeye.vmod.mixin;
 
+import net.spaceeye.vmod.constraintsManaging.ShipDeletionFilter;
 import net.spaceeye.vmod.constraintsManaging.VSConstraintsTracker;
 import net.spaceeye.vmod.events.AVSEvents;
 import org.spongepowered.asm.mixin.Final;
@@ -10,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
+import org.valkyrienskies.core.api.ships.ServerShip;
 import org.valkyrienskies.core.apigame.constraints.VSConstraint;
 import org.valkyrienskies.core.impl.game.ships.ShipData;
 import org.valkyrienskies.core.impl.game.ships.ShipObjectServerWorld;
@@ -21,6 +23,11 @@ abstract public class ShipObjectServerWorldMixin {
     @Final
     @Shadow
     private List<ShipData> deletedShipObjects;
+
+    @Inject(method = "deleteShip", at = @At(value = "HEAD"), remap = false, cancellable = true)
+    void vmod$deleteShip(ServerShip ship, CallbackInfo ci) {
+        ShipDeletionFilter.INSTANCE.filterShipsToDelete(ship, ci);
+    }
 
     // it's called before they get deleted
     @Inject(method = "postTick", at = @At(value = "FIELD", target = "Lorg/valkyrienskies/core/impl/game/ships/ShipObjectServerWorld;deletedShipObjects:Ljava/util/List;"), remap = false)
